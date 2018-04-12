@@ -4,7 +4,8 @@ from urllib.request import urlopen
 
 CAM = 0
 FRONTAL_FACE_CASCADE = 'haarcascades/haarcascade_frontalface_default.xml'
-URL = 'http://192.168.137.173:8080/shot.jpg'
+URL = 'http://192.168.0.3:8080/shot.jpg'
+LOGO = cv.imread("Logo.png", flags=1)
 
 maxSamples = 20
 
@@ -27,11 +28,27 @@ def main ():
             cv.waitKey(delay=100)
             cv.rectangle(image, pt1=(x,y), pt2=(x+h,y+w), color=(255,255,0), thickness=2)
 
-        cv.imshow("Capturando...", image)
+        imageWithLogo = putLogo(image, LOGO)
+        cv.imshow("Capturando...", imageWithLogo)
         if sampleNum >= maxSamples: break
     
     camera.release()
     cv.destroyAllWindows()
+
+def putLogo (image, logo):
+    rows, cols, channels = logo.shape
+    roi = image[0:rows, 0:cols ]
+
+    grayLogo = cv.cvtColor(logo, cv.COLOR_BGR2GRAY)
+    ret, mask = cv.threshold(grayLogo, 10, 255, cv.THRESH_BINARY)
+    maskInverse = cv.bitwise_not(mask)
+    
+    imageBg = cv.bitwise_and(roi, roi, mask = maskInverse)
+    logoFg = cv.bitwise_and(logo, logo,mask = mask)
+    dst = cv.add(imageBg, logoFg)
+    image[0:rows, 0:cols ] = dst
+
+    return image
 
 def phoneCamera (url):
     imageResponse = urlopen(url)
